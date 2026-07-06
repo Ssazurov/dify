@@ -38,5 +38,21 @@ else
     log "webapp-conversation: no changes"
 fi
 
+# RAG Backup (daily at 3am)
+log "Running RAG backup..."
+cd "${PROJECTS_DIR}/dify/docker"
+./backup-rag.sh
+
+# Commit RAG exports
+cd "${PROJECTS_DIR}/dify/exports"
+if [ -n "$(git status --porcelain)" ]; then
+    git add -A
+    git commit -m "RAG backup $(date '+%Y-%m-%d')"
+    git push origin main
+    log "RAG exports: committed and pushed"
+else
+    log "RAG exports: no changes"
+fi
+
 log "=== Auto-commit complete ==="
 echo "" >> "$LOG_FILE"

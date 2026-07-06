@@ -4,5 +4,8 @@
 
 # Ignore data volumes (backup separately, too large for git)
 volumes/
-exports/
 backups/
+
+# RAG exports - only JSON metadata, not binary vector data
+exports/
+!exports/*.json
