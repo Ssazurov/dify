@@ -1,3 +1,8 @@
 # Ignore actual .env files (keep only .env.example files in git)
 *.env
 !*.env.example
+
+# Ignore data volumes (backup separately, too large for git)
+volumes/
+exports/
+backups/
