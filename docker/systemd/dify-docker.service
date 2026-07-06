@@ -1,0 +1,23 @@
+[Unit]
+Description=Dify AI Platform (Docker Compose)
+Requires=docker.service network-online.target
+After=docker.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+WorkingDirectory=/home/vector/projects/dify/docker
+ExecStartPre=/usr/bin/docker compose pull -q
+ExecStart=/usr/bin/docker compose up -d
+ExecStop=/usr/bin/docker compose down
+ExecReload=/usr/bin/docker compose restart
+TimeoutStartSec=300
+TimeoutStopSec=120
+
+# Restart on failure (optional - for auto-recovery)
+# Restart=on-failure
+# RestartSec=30
+
+[Install]
+WantedBy=multi-user.target

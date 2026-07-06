@@ -1,0 +1,20 @@
+[Unit]
+Description=Ollama LLM Server
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/ollama serve
+Environment="OLLAMA_HOST=0.0.0.0:11434"
+Environment="OLLAMA_MODELS=/home/vector/ollama/models"
+Restart=always
+RestartSec=15
+User=vector
+Group=vector
+
+# Resource limits for memory management
+MemoryMax=16G
+MemoryHigh=12G
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,21 @@
+[Unit]
+Description=WebApp Next.js Application
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/home/vector/projects/webapp-conversation
+ExecStart=/usr/bin/npm start
+Environment="NODE_ENV=production"
+Environment="PORT=3000"
+Restart=always
+RestartSec=15
+User=vector
+Group=vector
+
+# Resource limits
+MemoryMax=4G
+MemoryHigh=3G
+
+[Install]
+WantedBy=multi-user.target
