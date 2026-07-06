@@ -1,0 +1,10 @@
+{
+  "date": "20260706_193431",
+  "timestamp": "2026-07-06T19:34:33+03:00",
+  "components": {
+    "postgresql": "datasets, documents, chunks, apps, conversations",
+    "weaviate": "vector embeddings",
+    "storage": "uploaded files"
+  },
+  "note": "Full backup includes docker volumes. This is data export only."
+}
