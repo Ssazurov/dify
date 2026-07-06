@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>RAG Ассистент</title>
+    <style>
+        body { font-family: sans-serif; max-width: 900px; margin: 20px auto; }
+        .doc-list { margin: 10px 0; }
+        .doc-item { cursor: pointer; padding: 5px; border: 1px solid #ccc; margin: 2px; display: inline-block; }
+        .doc-item.selected { background: #aaf; }
+        #response { white-space: pre-wrap; background: #f4f4f4; padding: 10px; margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <h2>Выберите документы для поиска</h2>
+    <input type="text" id="searchDocs" placeholder="Фильтр по названию или метаданным..." oninput="filterDocs()">
+    <div id="docList" class="doc-list"></div>
+    <br>
+    <label>Ваш вопрос:</label><br>
+    <textarea id="query" rows="3" cols="80"></textarea><br>
+    <button onclick="askQuestion()">Спросить</button>
+    <div id="response"></div>
+
+    <script>
+        const API_BASE = 'http://10.138.45.35:8080/v1';
+        const API_KEY = '41d3c915756c9e58303a7a13261082f6319ed69b9112b7f54a9dccbed55fd947f6472555ab081cc2cdad52acf7e954ea2bab85bf9355986195f43a8f86af1d5b';
+        const DATASET_ID = 'b5d19104-9ad0-47a0-a0eb-f7f80b340dc8';
+        const APP_ID = '28d80e43-9321-42ec-80a0-d14873dc1582';
+
+        let allDocs = [];
+        let selectedDocs = new Set();
+
+        // Загрузка списка документов из Knowledge Base
+        async function loadDocuments() {
+            const response = await fetch(`${API_BASE}/datasets/${DATASET_ID}/documents`, {
+                headers: { 'Authorization': `Bearer ${API_KEY}` }
+            });
+            const data = await response.json();
+            allDocs = data.data || [];
+            renderDocs();
+        }
+
+        function renderDocs(filterText = '') {
+            const container = document.getElementById('docList');
+            container.innerHTML = '';
+            allDocs
+                .filter(doc => !filterText || doc.name.toLowerCase().includes(filterText.toLowerCase()) 
+                    || (doc.metadata && JSON.stringify(doc.metadata).toLowerCase().includes(filterText.toLowerCase())))
+                .forEach(doc => {
+                    const div = document.createElement('div');
+                    div.className = 'doc-item' + (selectedDocs.has(doc.id) ? ' selected' : '');
+                    div.textContent = doc.name + (doc.metadata ? ' (' + JSON.stringify(doc.metadata) + ')' : '');
+                    div.onclick = () => toggleDoc(doc.id, div);
+                    container.appendChild(div);
+                });
+        }
+
+        function toggleDoc(id, element) {
+            if (selectedDocs.has(id)) {
+                selectedDocs.delete(id);
+                element.classList.remove('selected');
+            } else {
+                selectedDocs.add(id);
+                element.classList.add('selected');
+            }
+        }
+
+        function filterDocs() {
+            const text = document.getElementById('searchDocs').value;
+            renderDocs(text);
+        }
+
+        async function askQuestion() {
+            const query = document.getElementById('query').value;
+            const responseDiv = document.getElementById('response');
+            responseDiv.textContent = 'Думаю...';
+
+            // Формируем тело запроса с ограничением по документам
+            const body = {
+                inputs: {},
+                query: query,
+                response_mode: 'streaming',
+                user: 'user-1',
+                files: [],
+                retrieval_model: {
+                    search_method: 'hybrid_search',
+                    reranking_enable: true,
+                    reranking_model: {
+                        reranking_provider_name: 'langgenius/openai_api_compatible/openai_api_compatible',
+                        reranking_model_name: 'BAAI/bge-reranker-base'
+                    },
+                    // вот ключевой момент – передаём только ID выбранных документов
+                    document_ids: Array.from(selectedDocs),
+                    top_k: 3,
+                    score_threshold: 0.3,
+                    weights: null
+                }
+            };
+
+            try {
+                const response = await fetch(`${API_BASE}/chat-messages`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${API_KEY}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(body)
+                });
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let result = '';
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    const chunk = decoder.decode(value, { stream: true });
+                    // Обрабатываем SSE-события (упрощённо)
+                    const lines = chunk.split('\n');
+                    for (const line of lines) {
+                        if (line.startsWith('data:')) {
+                            const json = line.slice(5).trim();
+                            if (json && json !== '[DONE]') {
+                                try {
+                                    const event = JSON.parse(json);
+                                    if (event.answer) result += event.answer;
+                                } catch (e) {}
+                            }
+                        }
+                    }
+                    responseDiv.textContent = result;
+                }
+            } catch (err) {
+                responseDiv.textContent = 'Ошибка: ' + err.message;
+            }
+        }
+
+        window.onload = loadDocuments;
+    </script>
+</body>
+</html>
