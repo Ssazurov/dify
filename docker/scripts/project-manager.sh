@@ -35,9 +35,9 @@ NC='\033[0m' # No Color
 # Define all services with their types and dependencies
 declare -A SERVICES=(
     ["docker"]="docker:Dify Docker Compose"
-    ["nginx-1"]="systemd:Nginx Reverse Proxy"
-    ["ollama"]="systemd:Ollama LLM Server"
-    ["webapp"]="systemd:WebApp Next.js"
+    ["nginx-1"]="docker:Nginx Reverse Proxy"
+    ["ollama"]="docker:Ollama LLM Server"
+    ["webapp"]="manual:WebApp Next.js (npm run dev)"
     ["qdrant"]="docker:Qdrant Vector DB"
     ["redis"]="docker:Redis Cache"
 )
@@ -95,19 +95,85 @@ get_service_status() {
     
     case $type in
         docker)
-            if docker ps --format '{{.Names}}' | grep -q "^${service}$"; then
-                echo "running"
-            elif docker ps -a --format '{{.Names}}' | grep -q "^${service}$"; then
-                echo "stopped"
-            else
-                echo "not_found"
-            fi
+            # Use pattern matching for docker containers with prefixes
+            case $service in
+                docker)
+                    # Check for any dify container (docker-*)
+                    if docker ps --format '{{.Names}}' | grep -q "^docker-"; then
+                        echo "running"
+                    elif docker ps -a --format '{{.Names}}' | grep -q "^docker-"; then
+                        echo "stopped"
+                    else
+                        echo "not_found"
+                    fi
+                    ;;
+                nginx-1)
+                    if docker ps --format '{{.Names}}' | grep -q "^docker-nginx-1$"; then
+                        echo "running"
+                    elif docker ps -a --format '{{.Names}}' | grep -q "^docker-nginx-1$"; then
+                        echo "stopped"
+                    else
+                        echo "not_found"
+                    fi
+                    ;;
+                redis)
+                    if docker ps --format '{{.Names}}' | grep -q "^docker-redis-1$"; then
+                        echo "running"
+                    elif docker ps -a --format '{{.Names}}' | grep -q "^docker-redis-1$"; then
+                        echo "stopped"
+                    else
+                        echo "not_found"
+                    fi
+                    ;;
+                qdrant)
+                    # Qdrant runs with docker- prefix when started via compose
+                    if docker ps --format '{{.Names}}' | grep -q "^docker-qdrant-1$"; then
+                        echo "running"
+                    elif docker ps -a --format '{{.Names}}' | grep -q "^docker-qdrant-1$"; then
+                        echo "stopped"
+                    else
+                        echo "not_found"
+                    fi
+                    ;;
+                ollama)
+                    # Standalone ollama container (no prefix)
+                    if docker ps --format '{{.Names}}' | grep -q "^ollama$"; then
+                        echo "running"
+                    elif docker ps -a --format '{{.Names}}' | grep -q "^ollama$"; then
+                        echo "stopped"
+                    else
+                        echo "not_found"
+                    fi
+                    ;;
+                *)
+                    # Default pattern matching
+                    if docker ps --format '{{.Names}}' | grep -q "^${service}$"; then
+                        echo "running"
+                    elif docker ps -a --format '{{.Names}}' | grep -q "^${service}$"; then
+                        echo "stopped"
+                    else
+                        echo "not_found"
+                    fi
+                    ;;
+            esac
             ;;
         systemd)
             if systemctl is-active --quiet "${service}"; then
                 echo "running"
             elif systemctl is-enabled --quiet "${service}"; then
                 echo "stopped"
+            else
+                echo "not_found"
+            fi
+            ;;
+        manual)
+            # For manual services, check if process is running
+            if [ "$service" = "webapp" ]; then
+                if pgrep -f "npm run dev" > /dev/null 2>&1; then
+                    echo "running"
+                else
+                    echo "stopped"
+                fi
             else
                 echo "not_found"
             fi
@@ -129,15 +195,15 @@ check_health() {
             if ! docker info &>/dev/null; then
                 return 1
             fi
-            # Check if Dify containers are running
-            if docker ps --format '{{.Names}}' | grep -q "dify"; then
+            # Check if Dify containers are running (docker-* prefix)
+            if docker ps --format '{{.Names}}' | grep -q "^docker-"; then
                 return 0
             fi
             return 1
             ;;
         nginx-1)
-            if systemctl is-active --quiet nginx; then
-                # Check if nginx is responding
+            # Check if nginx container is running and responding
+            if docker ps --format '{{.Names}}' | grep -q "^docker-nginx-1$"; then
                 if curl -sf http://localhost/health &>/dev/null || \
                    curl -sf http://localhost:80 &>/dev/null || \
                    curl -sf http://localhost:443 &>/dev/null; then
@@ -159,13 +225,15 @@ check_health() {
             return 1
             ;;
         qdrant)
-            if curl -sf http://localhost:6333/collections &>/dev/null; then
+            # Check if qdrant container is running
+            if docker ps --format '{{.Names}}' | grep -q "^docker-qdrant-1$"; then
+                # Container is running, assume healthy (qdrant doesn't have curl)
                 return 0
             fi
             return 1
             ;;
         redis)
-            if docker exec dify-docker-redis-1 redis-cli -a "${REDIS_PASSWORD:-difyai123456}" ping 2>/dev/null | grep -q PONG; then
+            if docker exec docker-redis-1 redis-cli -a "${REDIS_PASSWORD:-difyai123456}" ping 2>/dev/null | grep -q PONG; then
                 return 0
             fi
             return 1
@@ -247,15 +315,45 @@ cmd_start() {
         
         log_info "Starting $service..."
         
-        case $type in
+        case $service in
             docker)
+                # Start Dify docker compose
                 cd "$DIFY_DIR"
                 docker compose up -d
-                # Wait for docker to be ready
                 sleep 10
                 ;;
-            systemd)
-                $SUDO systemctl start "${service}"
+            nginx-1)
+                # Start nginx from docker compose
+                cd "$DIFY_DIR"
+                docker compose up -d nginx
+                ;;
+            redis)
+                # Redis is part of dify compose, ensure it's running
+                cd "$DIFY_DIR"
+                docker compose up -d redis
+                ;;
+            qdrant)
+                # Start qdrant with profile
+                cd "$DIFY_DIR"
+                docker compose --profile qdrant up -d qdrant
+                ;;
+            ollama)
+                # Ollama is standalone - check if already running, if not start it
+                if ! docker ps --format '{{.Names}}' | grep -q "^ollama$"; then
+                    log_warning "Ollama is not running. Please start manually: docker run -d --name ollama -p 11434:11434 ollama/ollama"
+                else
+                    log_success "Ollama is already running"
+                fi
+                ;;
+            webapp)
+                # For manual services like webapp, start in background
+                cd "$WEBAPP_DIR"
+                mkdir -p "$LOG_DIR"
+                nohup npm run dev > "$LOG_DIR/webapp.log" 2>&1 &
+                log_info "WebApp started in background (PID: $!)"
+                ;;
+            *)
+                log_warning "Unknown service: $service"
                 ;;
         esac
         

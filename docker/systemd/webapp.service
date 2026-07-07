@@ -5,7 +5,7 @@ After=network.target
 [Service]
 Type=simple
 WorkingDirectory=/home/vector/projects/webapp-conversation
-ExecStart=/usr/bin/npm start
+ExecStart=/usr/bin/npm run dev
 Environment="NODE_ENV=production"
 Environment="PORT=3000"
 Restart=always
