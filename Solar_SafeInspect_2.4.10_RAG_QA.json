@@ -1,0 +1,282 @@
+{
+  "metadata": {
+    "document": "Solar_SafeInspect_2.4.10_Release_Notes.md",
+    "product": "Solar SafeInspect",
+    "version": "2.4.10",
+    "date": "28.04.2026",
+    "qa_count": 30,
+    "format": "RAG QA pairs for embedding/search/reranking/LLM testing"
+  },
+  "qa_pairs": [
+    {
+      "id": 1,
+      "section": "product_purpose",
+      "difficulty": "easy",
+      "rag_test_type": "exact_match",
+      "question": "Для чего предназначена система Solar SafeInspect?",
+      "answer": "Solar SafeInspect предназначен для контроля и управления привилегированными учетными записями и сессиями защищаемых информационных ресурсов, как классических, так и облачных.",
+      "keywords": ["назначение", "контроль", "привилегированные", "учетные записи"]
+    },
+    {
+      "id": 2,
+      "section": "product_purpose",
+      "difficulty": "easy",
+      "rag_test_type": "list_extraction",
+      "question": "Какие протоколы подключения контролирует Solar SafeInspect?",
+      "answer": "HTTP/HTTPS, SSH, RDP, Telnet, PostgreSQL, Rlogin, Oracle, VNC, PowerShell, TCP.",
+      "keywords": ["протоколы", "HTTP", "SSH", "RDP", "Telnet", "PostgreSQL"]
+    },
+    {
+      "id": 3,
+      "section": "product_purpose",
+      "difficulty": "medium",
+      "rag_test_type": "semantic_search",
+      "question": "Какие протоколы файловой передачи контролирует Solar SafeInspect?",
+      "answer": "Solar SafeInspect контролирует передаваемую информацию по протоколам SCP и SFTP, а также контролирует передаваемые файлы в сессиях SFTP/SCP.",
+      "keywords": ["файлы", "SCP", "SFTP", "передача"]
+    },
+    {
+      "id": 4,
+      "section": "product_purpose",
+      "difficulty": "medium",
+      "rag_test_type": "semantic_search",
+      "question": "Какие методы аутентификации поддерживает Solar SafeInspect?",
+      "answer": "Active Directory/LDAP, RADIUS, X.509, OTP.",
+      "keywords": ["аутентификация", "LDAP", "RADIUS", "X.509", "OTP"]
+    },
+    {
+      "id": 5,
+      "section": "product_purpose",
+      "difficulty": "medium",
+      "rag_test_type": "semantic_search",
+      "question": "Поддерживает ли Solar SafeInspect интеграцию с SIEM-системами?",
+      "answer": "Да, система позволяет передавать события, сгенерированные в Solar SafeInspect, во внешние системы хранения и управления событиями (SIEM-системы).",
+      "keywords": ["SIEM", "интеграция", "события"]
+    },
+    {
+      "id": 6,
+      "section": "product_purpose",
+      "difficulty": "medium",
+      "rag_test_type": "semantic_search",
+      "question": "Как Solar SafeInspect передает данные во внешние антивирусные системы?",
+      "answer": "Передача содержания защищенного соединения (для протоколов SSH, HTTP, HTTPS) по протоколу ICAP на внешние системы антивирусной защиты или DLP-системы.",
+      "keywords": ["ICAP", "антивирус", "DLP"]
+    },
+    {
+      "id": 7,
+      "section": "version_info",
+      "difficulty": "easy",
+      "rag_test_type": "exact_match",
+      "question": "Какая версия продукта поставляется в этом релизе?",
+      "answer": "Solar SafeInspect версии 2.4.10.",
+      "keywords": ["версия", "2.4.10"]
+    },
+    {
+      "id": 8,
+      "section": "distribution",
+      "difficulty": "easy",
+      "rag_test_type": "exact_match",
+      "question": "Какие файлы входят в дистрибутив Solar SafeInspect 2.4.10?",
+      "answer": "20260414105703-2.4.10.3343-3593243-develop-persist-safeinspect-dvd.iso (полный iso-образ) и 20260414105703-2.4.10.3343-3593243-develop-safeinspect-sysupg.tar.gz.gpg (полный образ в формате gpg для обновления через веб-интерфейс).",
+      "keywords": ["дистрибутив", "iso", "gpg", "файлы"]
+    },
+    {
+      "id": 9,
+      "section": "checksums",
+      "difficulty": "easy",
+      "rag_test_type": "table_lookup",
+      "question": "Какова SHA256 контрольная сумма ISO-образа?",
+      "answer": "936af6e1d8d921f9ca0259a95fe643228df72dfa2a05455c0d403b2946c392f7",
+      "keywords": ["SHA256", "контрольная сумма", "iso"]
+    },
+    {
+      "id": 10,
+      "section": "checksums",
+      "difficulty": "easy",
+      "rag_test_type": "table_lookup",
+      "question": "Какова MD5 контрольная сумма GPG-файла обновления?",
+      "answer": "bf0063c7a9c1a8280d62171b4faa103b",
+      "keywords": ["MD5", "контрольная сумма", "gpg"]
+    },
+    {
+      "id": 11,
+      "section": "system_requirements",
+      "difficulty": "easy",
+      "rag_test_type": "table_lookup",
+      "question": "Какие минимальные системные требования для установки Solar SafeInspect 2.4.10?",
+      "answer": "Оперативная память: 16 Гб, Дисковое пространство: 500 Гб, Количество ядер процессора: 10, Обязательное количество сетевых интерфейсов: 3.",
+      "keywords": ["системные требования", "память", "диск", "процессор"]
+    },
+    {
+      "id": 12,
+      "section": "system_requirements",
+      "difficulty": "medium",
+      "rag_test_type": "semantic_search",
+      "question": "Какой тип контроллера диска требуется для VMware ESXi?",
+      "answer": "SATA.",
+      "keywords": ["VMware", "ESXi", "контроллер", "SATA"]
+    },
+    {
+      "id": 13,
+      "section": "compatibility",
+      "difficulty": "medium",
+      "rag_test_type": "semantic_search",
+      "question": "С какими системами виртуализации совместим Solar SafeInspect 2.4.10?",
+      "answer": "VMware (ESXi670-202011002, ESXi 7.0 Update 2, ESXi 7.0 Update 3), KVM 1.2.0, Hyper-V (Windows Server 2012 R2 или Windows 8.1).",
+      "keywords": ["совместимость", "VMware", "KVM", "Hyper-V"]
+    },
+    {
+      "id": 14,
+      "section": "compatibility",
+      "difficulty": "easy",
+      "rag_test_type": "exact_match",
+      "question": "С какой версии необходимо обновляться до 2.4.10?",
+      "answer": "Обновление системы необходимо проводить с версии Solar SafeInspect 2.4.9.",
+      "keywords": ["обновление", "2.4.9", "версия"]
+    },
+    {
+      "id": 15,
+      "section": "compatibility",
+      "difficulty": "medium",
+      "rag_test_type": "semantic_search",
+      "question": "Какие версии Solar SafeConnect совместимы с версией 2.4.10?",
+      "answer": "Совместимые версии Solar SafeConnect: 1.14.0 и выше.",
+      "keywords": ["SafeConnect", "совместимость", "1.14.0"]
+    },
+    {
+      "id": 16,
+      "section": "browser_support",
+      "difficulty": "easy",
+      "rag_test_type": "exact_match",
+      "question": "Какой браузер рекомендуется для веб-интерфейса администратора?",
+      "answer": "Mozilla Firefox.",
+      "keywords": ["браузер", "Firefox", "веб-интерфейс"]
+    },
+    {
+      "id": 17,
+      "section": "installation",
+      "difficulty": "medium",
+      "rag_test_type": "semantic_search",
+      "question": "Сколько сетевых адаптеров необходимо добавить при создании виртуальной машины?",
+      "answer": "Три: публичный интерфейс, приватный интерфейс и интерфейс управления.",
+      "keywords": ["сетевые адаптеры", "публичный", "приватный", "управление"]
+    },
+    {
+      "id": 18,
+      "section": "installation",
+      "difficulty": "medium",
+      "rag_test_type": "semantic_search",
+      "question": "Какой IP-адрес по умолчанию у интерфейса управления Менеджера?",
+      "answer": "192.168.192.168 с префиксом маршрутизации /24 (сетевая маска 255.255.255.0).",
+      "keywords": ["IP-адрес", "управление", "по умолчанию", "192.168.192.168"]
+    },
+    {
+      "id": 19,
+      "section": "installation",
+      "difficulty": "medium",
+      "rag_test_type": "semantic_search",
+      "question": "Как называется учетная запись для аутентификации в консоли после установки?",
+      "answer": "Учетная запись root без пароля. Позже эта запись будет автоматически закрыта для использования.",
+      "keywords": ["root", "аутентификация", "консоль", "пароль"]
+    },
+    {
+      "id": 20,
+      "section": "upgrade_prereqs",
+      "difficulty": "medium",
+      "rag_test_type": "semantic_search",
+      "question": "Сколько свободного места должно быть в корневом и DATA разделах перед обновлением?",
+      "answer": "Минимум 10 ГБ свободного места в корневом разделе и разделе DATA.",
+      "keywords": ["свободное место", "10 ГБ", "корневой", "DATA"]
+    },
+    {
+      "id": 21,
+      "section": "upgrade_prereqs",
+      "difficulty": "medium",
+      "rag_test_type": "semantic_search",
+      "question": "Какие действия необходимо выполнить перед обновлением в веб-интерфейсе?",
+      "answer": "Выключить модуль статистики (Система > Модули) и убедиться, что встроенный коллектор Cafall включен (Настройки → Коллекторы).",
+      "keywords": ["статистика", "Cafall", "коллектор", "предварительные"]
+    },
+    {
+      "id": 22,
+      "section": "upgrade_gpg",
+      "difficulty": "medium",
+      "rag_test_type": "semantic_search",
+      "question": "Какой способ обновления считается предпочтительным и почему?",
+      "answer": "Обновление с использованием GPG-файла через веб-интерфейс администратора, поскольку данный вариант является функциональным и удобным, а также автоматически проверяет дистрибутив и контрольные суммы файлов.",
+      "keywords": ["GPG", "предпочтительный", "веб-интерфейс"]
+    },
+    {
+      "id": 23,
+      "section": "upgrade_iso",
+      "difficulty": "medium",
+      "rag_test_type": "semantic_search",
+      "question": "Какую опцию нужно выбрать при обновлении через ISO-файл?",
+      "answer": "Необходимо выбрать вариант U – upgrade, а не R – reinstall. При выборе R система будет полностью переустановлена.",
+      "keywords": ["ISO", "upgrade", "U", "reinstall"]
+    },
+    {
+      "id": 24,
+      "section": "session_restore",
+      "difficulty": "hard",
+      "rag_test_type": "procedural",
+      "question": "Как восстановить воспроизведение архивных сессий после обновления до 2.4.10?",
+      "answer": "Подключиться по SSH, перейти в режим суперпользователя (sudo -i), перейти в каталог /opt/safeinspect/share/tools/ и запустить скрипт: python3 WA_2708_main.py.",
+      "keywords": ["архивные сессии", "восстановление", "WA_2708_main.py", "SSH"]
+    },
+    {
+      "id": 25,
+      "section": "session_restore",
+      "difficulty": "hard",
+      "rag_test_type": "semantic_search",
+      "question": "Для сессий каких версий автоматически восстанавливается воспроизведение в 2.4.10?",
+      "answer": "Версий 2.4.3.3584, 2.4.4.1278 или 2.4.8. Сессии, записанные в версии 2.4.9, требуют ручного восстановления через скрипт миграции.",
+      "keywords": ["2.4.3", "2.4.4", "2.4.8", "автоматически"]
+    },
+    {
+      "id": 26,
+      "section": "new_features",
+      "difficulty": "medium",
+      "rag_test_type": "semantic_search",
+      "question": "Какая новая функциональность реализована в задаче SI-2438?",
+      "answer": "Расширенная информация о RDP/SSH подключениях для корректного аудита: дополнительные детали в интерфейсе для оценки контекста сессии и проверки корректности её выполнения.",
+      "keywords": ["SI-2438", "RDP", "SSH", "аудит"]
+    },
+    {
+      "id": 27,
+      "section": "new_features",
+      "difficulty": "medium",
+      "rag_test_type": "semantic_search",
+      "question": "Что изменилось в поддержке LDAP-групп (SI-2700)?",
+      "answer": "Реализована масштабируемая архитектура просмотра групп LDAP, устраняющая ограничения при работе с крупными каталогами (20 000+ пользователей).",
+      "keywords": ["SI-2700", "LDAP", "20 000", "группы"]
+    },
+    {
+      "id": 28,
+      "section": "new_features",
+      "difficulty": "medium",
+      "rag_test_type": "semantic_search",
+      "question": "Какая интеграция реализована в задаче SI-2031?",
+      "answer": "Интеграция аутентификации RADIUS+LDAP с поддержкой групповых политик: комбинирование двухфакторной аутентификации (через RADIUS) и управления доступом на основе групп (LDAP) для протоколов RDP и SSH.",
+      "keywords": ["SI-2031", "RADIUS", "LDAP", "двухфакторная"]
+    },
+    {
+      "id": 29,
+      "section": "fixed_bugs",
+      "difficulty": "medium",
+      "rag_test_type": "semantic_search",
+      "question": "Какой дефект исправлен в SI-1462?",
+      "answer": "Исправлена проблема недоступности Коллектора в кластере, связанная с переполнением памяти.",
+      "keywords": ["SI-1462", "Коллектор", "память", "кластер"]
+    },
+    {
+      "id": 30,
+      "section": "known_issues",
+      "difficulty": "hard",
+      "rag_test_type": "semantic_search",
+      "question": "Какой обходной путь существует для дефекта SI-995 (синхронизация менеджеров по событиям)?",
+      "answer": "При принудительной синхронизации, выполненной по нажатию кнопки или по достижении заданного времени, синхронизация проходит успешно.",
+      "keywords": ["SI-995", "синхронизация", "принудительная", "обходной путь"]
+    }
+  ]
+}
