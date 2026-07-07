@@ -220,7 +220,7 @@ services:
         chown -R 1001:1001 /app/api/storage && touch "$${FLAG_FILE}"
         echo "Permissions initialized. Exiting."
     volumes:
-      - ./volumes/app/storage:/app/api/storage
+      - dify_app_storage:/app/api/storage
     restart: "no"
 
   # API service
@@ -256,7 +256,7 @@ services:
         condition: service_started
     volumes:
       # Mount the storage directory to the container, for storing user files.
-      - ./volumes/app/storage:/app/api/storage
+      - dify_app_storage:/app/api/storage
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:5001/health"]
       interval: 30s
@@ -323,7 +323,7 @@ services:
         condition: service_started
     volumes:
       # Mount the storage directory to the container, for storing user files.
-      - ./volumes/app/storage:/app/api/storage
+      - dify_app_storage:/app/api/storage
     healthcheck:
       test: ["CMD-SHELL", "celery -A celery_healthcheck.celery inspect ping"]
       interval: ${COMPOSE_WORKER_HEALTHCHECK_INTERVAL:-30s}
@@ -427,7 +427,7 @@ services:
                -c 'statement_timeout=${POSTGRES_STATEMENT_TIMEOUT:-0}'
                -c 'idle_in_transaction_session_timeout=${POSTGRES_IDLE_IN_TRANSACTION_SESSION_TIMEOUT:-0}'
     volumes:
-      - ./volumes/db/data:/var/lib/postgresql/data
+      - dify_postgres_data:/var/lib/postgresql/data
     healthcheck:
       test:
         [
@@ -482,7 +482,7 @@ services:
       REDISCLI_AUTH: ${REDIS_PASSWORD:-difyai123456}
     volumes:
       # Mount the redis data directory to the container.
-      - ./volumes/redis/data:/data
+      - dify_redis_data:/data
     # Set the redis password when startup redis server.
     command: redis-server --requirepass ${REDIS_PASSWORD:-difyai123456}
     healthcheck:
@@ -515,7 +515,7 @@ services:
       SANDBOX_PORT: ${SANDBOX_PORT:-8194}
       PIP_MIRROR_URL: ${PIP_MIRROR_URL:-}
     volumes:
-      - ./volumes/sandbox/dependencies:/dependencies
+      - dify_sandbox:/dependencies
       - ./volumes/sandbox/conf:/conf
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8194/health"]
@@ -594,7 +594,7 @@ services:
     ports:
       - "${EXPOSE_PLUGIN_DEBUGGING_PORT:-5003}:${PLUGIN_DEBUGGING_PORT:-5003}"
     volumes:
-      - ./volumes/plugin_daemon:/app/storage
+      - dify_plugin_daemon:/app/storage
     depends_on:
       db_postgres:
         condition: service_healthy
@@ -708,7 +708,7 @@ services:
     restart: always
     volumes:
       # Mount the Weaviate data directory to the con tainer.
-      - ./volumes/weaviate:/var/lib/weaviate
+      - dify_weaviate_data:/var/lib/weaviate
     environment:
       # The Weaviate configurations
       # You can refer to the [Weaviate](https://weaviate.io/developers/weaviate/config-refs/env-vars) documentation for more information.
@@ -1198,3 +1198,16 @@ networks:
 volumes:
   oradata:
   dify_es01_data:
+  # Named volumes for persistent data (survive reboot)
+  dify_postgres_data:
+    name: dify_postgres_data
+  dify_redis_data:
+    name: dify_redis_data
+  dify_app_storage:
+    name: dify_app_storage
+  dify_weaviate_data:
+    name: dify_weaviate_data
+  dify_plugin_daemon:
+    name: dify_plugin_daemon
+  dify_sandbox:
+    name: dify_sandbox
