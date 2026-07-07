@@ -266,6 +266,8 @@ services:
     networks:
       - ssrf_proxy_network
       - default
+    ports:
+      - "8080:5001/tcp"
 
   # WebSocket service for workflow collaboration.
   api_websocket:
