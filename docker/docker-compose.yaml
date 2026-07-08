@@ -21,8 +21,8 @@ x-shared-api-worker-config: &shared-api-worker-config
       required: false
     - path: ./envs/vectorstores/weaviate.env
       required: false
-    - path: ./envs/vectorstores/qdrant.env
-      required: false
+    # - path: ./envs/vectorstores/qdrant.env
+    #   required: false
     - path: ./envs/vectorstores/oceanbase.env
       required: false
     - path: ./envs/vectorstores/seekdb.env
@@ -87,8 +87,8 @@ x-shared-worker-config: &shared-worker-config
       required: false
     - path: ./envs/vectorstores/weaviate.env
       required: false
-    - path: ./envs/vectorstores/qdrant.env
-      required: false
+    # - path: ./envs/vectorstores/qdrant.env
+    #   required: false
     - path: ./envs/vectorstores/oceanbase.env
       required: false
     - path: ./envs/vectorstores/seekdb.env
@@ -153,8 +153,8 @@ x-shared-worker-beat-config: &shared-worker-beat-config
       required: false
     - path: ./envs/vectorstores/weaviate.env
       required: false
-    - path: ./envs/vectorstores/qdrant.env
-      required: false
+    # - path: ./envs/vectorstores/qdrant.env
+    #  required: false
     - path: ./envs/vectorstores/oceanbase.env
       required: false
     - path: ./envs/vectorstores/seekdb.env
@@ -705,8 +705,8 @@ services:
   # The Weaviate vector store.
   weaviate:
     image: semitechnologies/weaviate:1.27.0
-    profiles:
-      - weaviate
+    # profiles:
+    #  - weaviate
     restart: always
     volumes:
       # Mount the Weaviate data directory to the con tainer.
@@ -789,15 +789,15 @@ services:
 
   # Qdrant vector store.
   # (if used, you need to set VECTOR_STORE to qdrant in the api & worker service.)
-  qdrant:
-    image: langgenius/qdrant:v1.8.3
-    profiles:
-      - qdrant
-    restart: always
-    volumes:
-      - ./volumes/qdrant:/qdrant/storage
-    environment:
-      QDRANT_API_KEY: ${QDRANT_API_KEY:-difyai123456}
+  # qdrant:
+    # image: langgenius/qdrant:v1.8.3
+    # profiles:
+      # - qdrant
+    # restart: always
+    # volumes:
+      # - ./volumes/qdrant:/qdrant/storage
+    # environment:
+      # QDRANT_API_KEY: ${QDRANT_API_KEY:-difyai123456}
 
   # The Couchbase vector store.
   couchbase-server:
