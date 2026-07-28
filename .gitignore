@@ -262,3 +262,20 @@ scripts/stress-test/reports/
 
 # Vitest local reports
 web/.vitest-reports/
+# Backup files that should not be committed
+*.tar.gz
+*.backup
+*.bak
+*.sql
+*.Zone.Identifier
+._*
+.~*
+env_backup.txt
+app_storage_backup.tar.gz
+dify_config_backup_*.tar.gz
+postgres_backup.tar.gz
+docker/*.backup
+docker/*.bak
+docker/*.sql
+docker/*/*.sql
+docker/*/*/*.sql
