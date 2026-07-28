@@ -1,0 +1,84 @@
+# config/metadata_schema.yaml
+# Полный список полей, которые worker пишет в Dify document metadata.
+# Заменяет хардкод "doc_ prefix or product_version" в filter_document_metadata.
+#
+# source:
+#   manual  — приходит из блока [key]: value в документе как есть
+#   derived — вычисляется worker'ом, не должно быть в блоке метаданных документа
+
+fields:
+  - name: cluster
+    type: string
+    source: manual
+    required: false
+
+  - name: company
+    type: string
+    source: manual
+    required: false
+
+  - name: subdivision
+    type: string
+    source: manual
+    required: false
+
+  - name: product
+    type: string
+    source: manual
+    required: true
+
+  - name: product_name
+    type: string
+    source: manual
+    required: false
+
+  - name: doc_category
+    type: string
+    source: manual
+    required: false
+
+  - name: doc_type
+    type: string
+    source: manual
+    required: true
+    values: [Release Notes, What's New, Manual, Guide, Инструкция]
+
+  - name: doc_name
+    type: string
+    source: manual
+    required: true
+
+  - name: doc_created
+    type: string   # реально хранится как ISO YYYY-MM-DD, не Unix ts — см. текущую extract_metadata
+    source: manual
+    required: false
+
+  - name: doc_approved
+    type: string
+    source: manual
+    required: false
+
+  - name: product_version
+    type: string
+    source: manual
+    required: true
+
+  - name: doc_link_orig
+    type: string
+    source: manual
+    required: false
+
+  # ниже — поля из целевой схемы GAR (doc_name, version, version_major,
+  # is_latest, product, doc_type, source_file, page), которых пока НЕТ
+  # в gar-metadata-worker вообще — их вычисление требует сравнения версий
+  # между документами одного product+doc_type, это выходит за рамки
+  # простого построчного парсера и должно жить в Core API metadata router
+  - name: version_major
+    type: string
+    source: derived   # из product_version, напр. "2.4.10" -> "2"
+    required: false
+
+  - name: is_latest
+    type: string
+    source: derived   # сравнение product_version среди документов с тем же product+doc_type
+    required: false

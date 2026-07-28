@@ -69,7 +69,7 @@ x-shared-api-worker-config: &shared-api-worker-config
   networks:
     - ssrf_proxy_network
     - default
-  restart: unless-stopped
+  restart: always
 
 x-shared-worker-config: &shared-worker-config
   env_file:
@@ -135,7 +135,7 @@ x-shared-worker-config: &shared-worker-config
   networks:
     - ssrf_proxy_network
     - default
-  restart: unless-stopped
+  restart: always
 
 x-shared-worker-beat-config: &shared-worker-beat-config
   env_file:
@@ -201,7 +201,7 @@ x-shared-worker-beat-config: &shared-worker-beat-config
   networks:
     - ssrf_proxy_network
     - default
-  restart: unless-stopped
+  restart: always
 
 services:
   # Init container to fix permissions
@@ -211,9 +211,14 @@ services:
       - sh
       - -c
       - |
-        echo "Checking permissions..."
-        chown -R 1001:1001 /app/api/storage
-        echo "Permissions fixed"
+        FLAG_FILE="/app/api/storage/.init_permissions"
+        if [ -f "$${FLAG_FILE}" ]; then
+          echo "Permissions already initialized. Exiting."
+          exit 0
+        fi
+        echo "Initializing permissions for /app/api/storage"
+        chown -R 1001:1001 /app/api/storage && touch "$${FLAG_FILE}"
+        echo "Permissions initialized. Exiting."
     volumes:
       - dify_app_storage:/app/api/storage
     restart: "no"
@@ -221,8 +226,7 @@ services:
   # API service
   api:
     <<: *shared-api-worker-config
-    image: dify-api-docling:1.15.0
-    restart: unless-stopped
+    image: langgenius/dify-api:1.15.0
     environment:
       MODE: api
       SENTRY_DSN: ${API_SENTRY_DSN:-}
@@ -265,43 +269,10 @@ services:
     ports:
       - "8080:5001/tcp"
 
-
-
-  docling-intake:
-    image: docling-intake-service:1.0
-    # build:
-    #   context: ./docling-intake
-    #  args:
-    #      BASE_IMAGE: docker-docling-intake:latest   # реальный локальный образ с CUDA/torch (docker images | grep docling)
-    ports:
-      - "8090:8090"
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: 1
-              capabilities: [gpu]
-    volumes:
-      - ./docling-intake/shard_tables.py:/app/shard_tables.py   # как и раньше — live-редактирование без ребилда
-      - ./docling-intake/main.py:/app/main.py   # live-редактирование без ребилда (добавлено 24.07.2026, фикс .md 400)
-      - huggingface_cache:/root/.cache/huggingface
-      - rapidocr-models:/root/.cache/rapidocr
-    networks:
-      - default
-    restart: unless-stopped
-    healthcheck:
-      # curl в образе нет (base - минимальный python), используем urllib
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8090/health')"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-
-
   # WebSocket service for workflow collaboration.
   api_websocket:
     <<: *shared-api-worker-config
-    image: dify-api-docling:1.15.0
+    image: langgenius/dify-api:1.15.0
     profiles:
       - collaboration
     environment:
@@ -327,7 +298,7 @@ services:
   # The Celery worker for processing all queues (dataset, workflow, mail, etc.)
   worker:
     <<: *shared-worker-config
-    image: dify-api-docling:1.15.0
+    image: langgenius/dify-api:1.15.0
     environment:
       MODE: worker
       SENTRY_DSN: ${API_SENTRY_DSN:-}
@@ -370,7 +341,7 @@ services:
   # Celery beat for scheduling periodic tasks.
   worker_beat:
     <<: *shared-worker-beat-config
-    image: dify-api-docling:1.15.0
+    image: langgenius/dify-api:1.15.0
     environment:
       MODE: beat
     depends_on:
@@ -404,7 +375,7 @@ services:
   # Frontend web application.
   web:
     image: langgenius/dify-web:1.15.0
-    restart: unless-stopped
+    restart: always
     env_file:
       - path: ./envs/core-services/web.env
         required: false
@@ -443,7 +414,7 @@ services:
     image: postgres:15-alpine
     profiles:
       - postgresql
-    restart: unless-stopped
+    restart: always
     environment:
       POSTGRES_USER: ${DB_USERNAME:-postgres}
       POSTGRES_PASSWORD: ${DB_PASSWORD:-difyai123456}
@@ -457,8 +428,6 @@ services:
                -c 'effective_cache_size=${POSTGRES_EFFECTIVE_CACHE_SIZE:-4096MB}'
                -c 'statement_timeout=${POSTGRES_STATEMENT_TIMEOUT:-0}'
                -c 'idle_in_transaction_session_timeout=${POSTGRES_IDLE_IN_TRANSACTION_SESSION_TIMEOUT:-0}'
-    ports:
-      - "5432:5432"
     volumes:
       - dify_postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -482,7 +451,7 @@ services:
     image: mysql:8.0
     profiles:
       - mysql
-    restart: unless-stopped
+    restart: always
     environment:
       MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-difyai123456}
       MYSQL_DATABASE: ${DB_DATABASE:-dify}
@@ -510,7 +479,7 @@ services:
   # The redis cache.
   redis:
     image: redis:6-alpine
-    restart: unless-stopped
+    restart: always
     environment:
       REDISCLI_AUTH: ${REDIS_PASSWORD:-difyai123456}
     volumes:
@@ -528,7 +497,7 @@ services:
   # The DifySandbox
   sandbox:
     image: langgenius/dify-sandbox:0.2.15
-    restart: unless-stopped
+    restart: always
     env_file:
       - path: ./envs/core-services/sandbox.env
         required: false
@@ -558,7 +527,7 @@ services:
   # plugin daemon
   plugin_daemon:
     image: langgenius/dify-plugin-daemon:0.6.3-local
-    restart: unless-stopped
+    restart: always
     env_file:
       - path: ./envs/core-services/shared.env
         required: false
@@ -647,7 +616,7 @@ services:
   # https://docs.dify.ai/learn-more/faq/install-faq#18-why-is-ssrf-proxy-needed%3F
   ssrf_proxy:
     image: ubuntu/squid:latest
-    restart: unless-stopped
+    restart: always
     volumes:
       - ./ssrf_proxy/squid.conf.template:/etc/squid/squid.conf.template
       - ./ssrf_proxy/docker-entrypoint.sh:/docker-entrypoint-mount.sh
@@ -691,7 +660,7 @@ services:
   # used for reverse proxying the API service and Web service.
   nginx:
     image: nginx:latest
-    restart: unless-stopped
+    restart: always
     volumes:
       - ./nginx/nginx.conf.template:/etc/nginx/nginx.conf.template
       - ./nginx/proxy.conf.template:/etc/nginx/proxy.conf.template
@@ -741,7 +710,7 @@ services:
     container_name: oceanbase
     profiles:
       - oceanbase
-    restart: unless-stopped
+    restart: always
     volumes:
       - ./volumes/oceanbase/data:/root/ob
       - ./volumes/oceanbase/conf:/root/.obd/cluster
@@ -774,7 +743,7 @@ services:
     container_name: seekdb
     profiles:
       - seekdb
-    restart: unless-stopped
+    restart: always
     volumes:
       - ./volumes/seekdb:/var/lib/oceanbase
     environment:
@@ -799,7 +768,7 @@ services:
     image: langgenius/qdrant:v1.8.3
     profiles:
       - qdrant
-    restart: unless-stopped
+    restart: always
     ports:
       - "6333:6333"
       - "6334:6334"
@@ -813,7 +782,7 @@ services:
     # image: semitechnologies/weaviate:1.27.0
     # # profiles:
     # #  - weaviate
-    # restart: unless-stopped
+    # restart: always
     # volumes:
       # # Mount the Weaviate data directory to the con tainer.
       # - dify_weaviate_data:/var/lib/weaviate
@@ -840,7 +809,7 @@ services:
     build: ./couchbase-server
     profiles:
       - couchbase
-    restart: unless-stopped
+    restart: always
     environment:
       - CLUSTER_NAME=dify_search
       - COUCHBASE_ADMINISTRATOR_USERNAME=${COUCHBASE_USER:-Administrator}
@@ -877,7 +846,7 @@ services:
     image: pgvector/pgvector:pg16
     profiles:
       - pgvector
-    restart: unless-stopped
+    restart: always
     environment:
       PGUSER: ${PGVECTOR_PGUSER:-postgres}
       # The password for the default postgres user.
@@ -904,7 +873,7 @@ services:
     image: vastdata/vastbase-vector
     profiles:
       - vastbase
-    restart: unless-stopped
+    restart: always
     environment:
       - VB_DBCOMPATIBILITY=PG
       - VB_DB=dify
@@ -928,7 +897,7 @@ services:
     image: tensorchord/pgvecto-rs:pg16-v0.3.0
     profiles:
       - pgvecto-rs
-    restart: unless-stopped
+    restart: always
     environment:
       PGUSER: ${PGVECTOR_PGUSER:-postgres}
       # The password for the default postgres user.
@@ -950,7 +919,7 @@ services:
     image: ghcr.io/chroma-core/chroma:0.5.20
     profiles:
       - chroma
-    restart: unless-stopped
+    restart: always
     volumes:
       - ./volumes/chroma:/chroma/chroma
     environment:
@@ -964,7 +933,7 @@ services:
     profiles:
       - iris
     container_name: iris
-    restart: unless-stopped
+    restart: always
     init: true
     ports:
       - "${IRIS_SUPER_SERVER_PORT:-1972}:1972"
@@ -984,7 +953,7 @@ services:
     image: container-registry.oracle.com/database/free:latest
     profiles:
       - oracle
-    restart: unless-stopped
+    restart: always
     volumes:
       - source: oradata
         type: volume
@@ -1105,7 +1074,7 @@ services:
     profiles:
       - opengauss
     privileged: true
-    restart: unless-stopped
+    restart: always
     environment:
       GS_USERNAME: ${OPENGAUSS_USER:-postgres}
       GS_PASSWORD: ${OPENGAUSS_PASSWORD:-Dify@123}
@@ -1127,7 +1096,7 @@ services:
     image: myscale/myscaledb:1.6.4
     profiles:
       - myscale
-    restart: unless-stopped
+    restart: always
     tty: true
     volumes:
       - ./volumes/myscale/data:/var/lib/clickhouse
@@ -1142,7 +1111,7 @@ services:
     image: matrixorigin/matrixone:2.1.1
     profiles:
       - matrixone
-    restart: unless-stopped
+    restart: always
     volumes:
       - ./volumes/matrixone/data:/mo-data
     ports:
@@ -1156,7 +1125,7 @@ services:
     profiles:
       - elasticsearch
       - elasticsearch-ja
-    restart: unless-stopped
+    restart: always
     volumes:
       - ./elasticsearch/docker-entrypoint.sh:/docker-entrypoint-mount.sh
       - dify_es01_data:/usr/share/elasticsearch/data
@@ -1193,7 +1162,7 @@ services:
       - elasticsearch
     depends_on:
       - elasticsearch
-    restart: unless-stopped
+    restart: always
     environment:
       XPACK_ENCRYPTEDSAVEDOBJECTS_ENCRYPTIONKEY: d1a66dfd-c4d3-4a0a-8290-2abcb83ab3aa
       NO_PROXY: localhost,127.0.0.1,elasticsearch,kibana
@@ -1218,7 +1187,7 @@ services:
     image: downloads.unstructured.io/unstructured-io/unstructured-api:latest
     profiles:
       - unstructured
-    restart: unless-stopped
+    restart: always
     volumes:
       - ./volumes/unstructured:/app/data
 
@@ -1251,7 +1220,3 @@ volumes:
     name: dify_plugin_daemon
   dify_sandbox:
     name: dify_sandbox
-  rapidocr-models:
-    name: docling_rapidocr
-  huggingface_cache:
-    name: docling_huggingface_cache

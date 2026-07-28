@@ -11,8 +11,7 @@ RUN pip install --no-cache-dir uv==${UV_VERSION}
 
 FROM base AS packages
 
-# if you located in China, you can use aliyun mirror to speed up
-# RUN sed -i 's@deb.debian.org@mirrors.aliyun.com@g' /etc/apt/sources.list.d/debian.sources
+RUN sed -i 's@deb.debian.org@mirror.yandex.ru@g' /etc/apt/sources.list.d/debian.sources
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
@@ -60,6 +59,8 @@ ARG NODESOURCE_KEY_FPR=6F71F525282841EEDAF851B42F59B5F99B1BE0B4
 RUN groupadd -r -g ${dify_uid} dify && \
     useradd -r -u ${dify_uid} -g ${dify_uid} -s /bin/bash dify && \
     chown -R dify:dify /app
+
+RUN sed -i 's@deb.debian.org@mirror.yandex.ru@g' /etc/apt/sources.list.d/debian.sources
 
 RUN \
     apt-get update \

@@ -265,39 +265,26 @@ services:
     ports:
       - "8080:5001/tcp"
 
-
-
   docling-intake:
-    image: docling-intake-service:1.0
-    # build:
-    #   context: ./docling-intake
-    #  args:
-    #      BASE_IMAGE: docker-docling-intake:latest   # реальный локальный образ с CUDA/torch (docker images | grep docling)
-    ports:
-      - "8090:8090"
+    build: ./docling-intake
+    volumes:
+      - ./intake/incoming:/data/incoming
+      - ./intake/processed:/data/processed
+      - rapidocr-models:/usr/local/lib/python3.11/site-packages/rapidocr/models
+      - huggingface_cache:/root/.cache/huggingface
+    environment:
+      - HF_TOKEN=${HF_TOKEN} # переменная из .env файла
+      - DIFY_BASE_URL=http://api:5001   # внутренний порт Dify API, проверьте у себя
+    networks:
+      - default   # ключевое — та же сеть, где api/qdrant/ssrf_proxy
     deploy:
       resources:
         reservations:
           devices:
             - driver: nvidia
               count: 1
-              capabilities: [gpu]
-    volumes:
-      - ./docling-intake/shard_tables.py:/app/shard_tables.py   # как и раньше — live-редактирование без ребилда
-      - ./docling-intake/main.py:/app/main.py   # live-редактирование без ребилда (добавлено 24.07.2026, фикс .md 400)
-      - huggingface_cache:/root/.cache/huggingface
-      - rapidocr-models:/root/.cache/rapidocr
-    networks:
-      - default
-    restart: unless-stopped
-    healthcheck:
-      # curl в образе нет (base - минимальный python), используем urllib
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8090/health')"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-
-
+              capabilities: [gpu]  
+      
   # WebSocket service for workflow collaboration.
   api_websocket:
     <<: *shared-api-worker-config
@@ -457,8 +444,6 @@ services:
                -c 'effective_cache_size=${POSTGRES_EFFECTIVE_CACHE_SIZE:-4096MB}'
                -c 'statement_timeout=${POSTGRES_STATEMENT_TIMEOUT:-0}'
                -c 'idle_in_transaction_session_timeout=${POSTGRES_IDLE_IN_TRANSACTION_SESSION_TIMEOUT:-0}'
-    ports:
-      - "5432:5432"
     volumes:
       - dify_postgres_data:/var/lib/postgresql/data
     healthcheck:

@@ -22,7 +22,7 @@ acl to_private_networks dst ::/96            # deprecated IPv4-compatible
 acl to_private_networks dst fc00::/7
 acl to_private_networks dst fe80::/10
 acl SSL_ports port 443
-# acl SSL_ports port 1025-65535   # Enable the configuration to resolve this issue: https://github.com/langgenius/dify/issues/12792
+acl SSL_ports port 1025-65535   # Enable the configuration to resolve this issue: https://github.com/langgenius/dify/issues/12792
 acl Safe_ports port 80		# http
 acl Safe_ports port 21		# ftp
 acl Safe_ports port 443		# https

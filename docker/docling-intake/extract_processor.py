@@ -28,10 +28,10 @@ from core.rag.extractor.unstructured.unstructured_pptx_extractor import Unstruct
 from core.rag.extractor.unstructured.unstructured_xml_extractor import UnstructuredXmlExtractor
 from core.rag.extractor.watercrawl.extractor import WaterCrawlWebExtractor
 from core.rag.extractor.word_extractor import WordExtractor
+from core.rag.extractor.docling_sharded_word_extractor import DoclingShardedWordExtractor
 from core.rag.models.document import Document
 from extensions.ext_storage import storage
 from models.model import UploadFile
-from core.rag.extractor.docling_http_extractor import DoclingHTTPExtractor
 
 SUPPORT_URL_CONTENT_TYPES = ["application/pdf", "text/plain", "application/json"]
 USER_AGENT = (
@@ -74,8 +74,6 @@ class ExtractProcessor:
                             suffix = "." + match.group(1)
                         else:
                             suffix = ""
-            # https://stackoverflow.com/questions/26541416/generate-temporary-file-names-without-creating-actual-file-in-python#comment90414256_26541521
-            # Generate a temporary filename under the created temp_dir and ensure the directory exists
             file_path = f"{temp_dir}/{next(tempfile._get_candidate_names())}{suffix}"  # type: ignore
             Path(file_path).write_bytes(response.content)
             extract_setting = ExtractSetting(datasource_type=DatasourceType.FILE, document_model="text_model")
@@ -101,7 +99,6 @@ class ExtractProcessor:
                 if not file_path:
                     assert upload_file is not None, "upload_file is required"
                     suffix = Path(upload_file.key).suffix
-                    # FIXME mypy: Cannot determine type of 'tempfile._get_candidate_names' better not use it here
                     file_path = f"{temp_dir}/{next(tempfile._get_candidate_names())}{suffix}"  # type: ignore
                     storage.download(upload_file.key, file_path)
                 input_file = Path(file_path)
@@ -121,13 +118,19 @@ class ExtractProcessor:
                             upload_file.id,
                         )
                     elif file_extension == ".pdf":
-                        extractor = DoclingHTTPExtractor(file_path, upload_file.tenant_id, upload_file.created_by)
+                        assert upload_file is not None
+                        extractor = PdfExtractor(file_path, upload_file.tenant_id, upload_file.created_by)
                     elif file_extension in {".md", ".markdown", ".mdx"}:
-                        extractor = DoclingHTTPExtractor(file_path, upload_file.tenant_id, upload_file.created_by)
+                        extractor = (
+                            UnstructuredMarkdownExtractor(file_path, unstructured_api_url, unstructured_api_key)
+                            if is_automatic
+                            else MarkdownExtractor(file_path, autodetect_encoding=True)
+                        )
                     elif file_extension in {".htm", ".html"}:
                         extractor = HtmlExtractor(file_path)
                     elif file_extension == ".docx":
-                        extractor = DoclingHTTPExtractor(file_path, upload_file.tenant_id, upload_file.created_by)
+                        assert upload_file is not None
+                        extractor = DoclingShardedWordExtractor(file_path, upload_file.tenant_id, upload_file.created_by)
                     elif file_extension == ".doc":
                         extractor = UnstructuredWordExtractor(file_path, unstructured_api_url, unstructured_api_key)
                     elif file_extension == ".csv":
@@ -138,8 +141,6 @@ class ExtractProcessor:
                         extractor = UnstructuredEmailExtractor(file_path, unstructured_api_url, unstructured_api_key)
                     elif file_extension == ".ppt":
                         extractor = UnstructuredPPTExtractor(file_path, unstructured_api_url, unstructured_api_key)
-                        # You must first specify the API key
-                        # because unstructured_api_key is necessary to parse .ppt documents
                     elif file_extension == ".pptx":
                         extractor = UnstructuredPPTXExtractor(file_path, unstructured_api_url, unstructured_api_key)
                     elif file_extension == ".xml":
@@ -147,7 +148,6 @@ class ExtractProcessor:
                     elif file_extension == ".epub":
                         extractor = UnstructuredEpubExtractor(file_path, unstructured_api_url, unstructured_api_key)
                     else:
-                        # txt
                         extractor = TextExtractor(file_path, autodetect_encoding=True)
                 else:
                     if file_extension in {".xlsx", ".xls"}:
@@ -158,19 +158,20 @@ class ExtractProcessor:
                             upload_file.id,
                         )
                     elif file_extension == ".pdf":
-                        extractor = DoclingHTTPExtractor(file_path, upload_file.tenant_id, upload_file.created_by)
+                        assert upload_file is not None
+                        extractor = PdfExtractor(file_path, upload_file.tenant_id, upload_file.created_by)
                     elif file_extension in {".md", ".markdown", ".mdx"}:
-                        extractor = DoclingHTTPExtractor(file_path, upload_file.tenant_id, upload_file.created_by)
+                        extractor = MarkdownExtractor(file_path, autodetect_encoding=True)
                     elif file_extension in {".htm", ".html"}:
                         extractor = HtmlExtractor(file_path)
                     elif file_extension == ".docx":
-                        extractor = DoclingHTTPExtractor(file_path, upload_file.tenant_id, upload_file.created_by)
+                        assert upload_file is not None
+                        extractor = DoclingShardedWordExtractor(file_path, upload_file.tenant_id, upload_file.created_by)
                     elif file_extension == ".csv":
                         extractor = CSVExtractor(file_path, autodetect_encoding=True)
                     elif file_extension == ".epub":
                         extractor = UnstructuredEpubExtractor(file_path)
                     else:
-                        # txt
                         extractor = TextExtractor(file_path, autodetect_encoding=True)
                 return extractor.extract()
         elif extract_setting.datasource_type == DatasourceType.NOTION:
