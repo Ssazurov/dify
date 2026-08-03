@@ -279,3 +279,11 @@ docker/*.bak
 docker/*.sql
 docker/*/*.sql
 docker/*/*/*.sql
+
+# Local backup files
+*.backup
+*.backup2
+*.old
+
+# PDF documents (local only)
+*.pdf
