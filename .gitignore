@@ -287,3 +287,4 @@ docker/*/*/*.sql
 
 # PDF documents (local only)
 *.pdf
+*:Zone.Identifier
