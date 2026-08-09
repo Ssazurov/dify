@@ -1,6 +1,6 @@
 #!/bin/bash
 
-cd /home/vector/projects/dify/docker
+cd /home/vector/dify/docker
 
 docker compose ps | grep "Up" >/dev/null
 

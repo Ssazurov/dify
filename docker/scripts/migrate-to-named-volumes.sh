@@ -5,7 +5,7 @@ set -e
 
 echo "=== Migrating to Named Volumes ==="
 
-cd /home/vector/projects/dify/docker
+cd /home/vector/dify/docker
 
 # Stop containers
 echo "Stopping containers..."

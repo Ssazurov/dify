@@ -1,5 +1,5 @@
 #!/bin/bash
-vector@MSI:~/projects/dify/docker$            docker compose run --rm   -v "$(pwd)/shard_tables.py:/app/shard_tables.py"   docling-intake   /data/incoming/AG.pdf   /data/processed/AG1.md   --doc-name "RN1"   --product "DIFY"   --doc-type "Инструкция"   --version "-"   --device cuda
+vector@MSI:~/dify/docker$            docker compose run --rm   -v "$(pwd)/shard_tables.py:/app/shard_tables.py"   docling-intake   /data/incoming/AG.pdf   /data/processed/AG1.md   --doc-name "RN1"   --product "DIFY"   --doc-type "Инструкция"   --version "-"   --device cuda
 
   
 docker compose run --rm   -v "$(pwd)/shard_tables.py:/app/shard_tables.py"   docling-intake   /data/incoming/rn.pdf   /data/processed/rn1.md   --doc-name "RN1"   --product "DIFY"   --doc-type "Инструкция"   --version "-"   --device cuda

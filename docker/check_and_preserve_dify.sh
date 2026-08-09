@@ -4,7 +4,7 @@
 set -e  # остановка при ошибке
 
 # --- Конфигурация ---
-PROJECT_DIR="/home/vector/projects/dify/docker"
+PROJECT_DIR="/home/vector/dify/docker"
 BACKUP_DIR="/home/vector/backups/dify"
 TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
 LOG_FILE="$PROJECT_DIR/check_and_preserve.log"

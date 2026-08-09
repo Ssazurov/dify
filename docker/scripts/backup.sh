@@ -1,9 +1,9 @@
 #!/bin/bash
 # Dify Backup Script
-# Run manually: bash /home/vector/projects/dify/docker/scripts/backup.sh
-# Or add to crontab: 0 2 * * * /home/vector/projects/dify/docker/scripts/backup.sh
+# Run manually: bash /home/vector/dify/docker/scripts/backup.sh
+# Or add to crontab: 0 2 * * * /home/vector/dify/docker/scripts/backup.sh
 
-BACKUP_DIR="/home/vector/projects/dify/backups"
+BACKUP_DIR="/home/vector/dify/backups"
 DATE=$(date +%Y%m%d_%H%M%S)
 
 mkdir -p "$BACKUP_DIR"

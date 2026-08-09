@@ -5,7 +5,7 @@
 
 set -e
 
-EXPORT_DIR="/home/vector/projects/dify/exports"
+EXPORT_DIR="/home/vector/dify/exports"
 DATE=$(date +%Y%m%d_%H%M%S)
 DB_CONTAINER="docker-db_postgres-1"
 
