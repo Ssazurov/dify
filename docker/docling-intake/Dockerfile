@@ -11,6 +11,13 @@ FROM ${BASE_IMAGE}
 
 WORKDIR /app
 
+# tesseract-ocr baked in — раньше ставился вручную apt-get внутри
+# контейнера и слетал при каждом docker rm/пересоздании (issue #76).
+# rus/eng — языки, используемые в DOCLING_OCR_LANG (shard_tables.py).
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    tesseract-ocr tesseract-ocr-rus tesseract-ocr-eng \
+    && rm -rf /var/lib/apt/lists/*
+
 COPY requirements-api.txt .
 RUN pip install --no-cache-dir -r requirements-api.txt
 

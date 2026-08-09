@@ -14,6 +14,19 @@ import os
 import re
 import sys
 import time
+import subprocess as _subprocess
+
+if os.getenv("DEBUG_TRACE_TESSERACT"):
+    _orig_popen = _subprocess.Popen
+
+    def _traced_popen(cmd, *a, **kw):
+        try:
+            print("TESSERACT_CMD_TRACE:", cmd, file=sys.stderr, flush=True)
+        except Exception:
+            pass
+        return _orig_popen(cmd, *a, **kw)
+
+    _subprocess.Popen = _traced_popen
 from pathlib import Path
 
 import torch
@@ -48,7 +61,6 @@ def get_table_dataframe(table_item, doc):
     except Exception:
         pass
 
-    # fallback: ручной разбор grid из TableData
     grid = getattr(table_item.data, "grid", None)
     if not grid or len(grid) < 2:
         return [], []
@@ -98,21 +110,11 @@ def build_metadata_header(a) -> str:
     )
 
 
-
-
 def is_toc_table(headers, rows, threshold=0.7):
-    """
-    Определяет, является ли таблица оглавлением.
-    Критерии (срабатывает при выполнении любого):
-    1) ровно 2 колонки, и вторая колонка содержит только цифры, точки, пробелы (без букв) в >80% строк
-    2) первая колонка повторяется в >70% строк (как в RN-документе)
-    """
     if not rows or len(rows) < 3:
         return False
 
-    # Критерий 1: две колонки, вторая – только цифры/точки/пробелы (без букв)
     if len(headers) == 2:
-        import re
         num_col = 1
         num_count = 0
         for r in rows:
@@ -123,7 +125,6 @@ def is_toc_table(headers, rows, threshold=0.7):
         if num_count / len(rows) > 0.8:
             return True
 
-    # Критерий 2: первая колонка повторяется >70% (как в оглавлении release notes)
     if rows:
         first_cols = [r[0] if r else "" for r in rows]
         from collections import Counter
@@ -134,26 +135,73 @@ def is_toc_table(headers, rows, threshold=0.7):
 
     return False
 
-def convert(a):
-    from docling.document_converter import DocumentConverter
-    from docling_core.types.doc import TableItem, TextItem
-    from docling.datamodel.pipeline_options import PipelineOptions, TableStructureOptions
-    from collections import Counter
-    import time
-    import re
 
-    print("⏳ Настройка пайплайна...")
-    pipeline_opts = PipelineOptions(
-        do_ocr=False,
+def _build_pdf_pipeline_options(a):
+    from docling.datamodel.accelerator_options import AcceleratorOptions
+    from docling.datamodel.pipeline_options import PdfPipelineOptions, RapidOcrOptions, TableStructureOptions, TesseractCliOcrOptions
+
+    use_ocr = str(os.getenv("DOCLING_ENABLE_PDF_OCR", "1")).strip().lower() not in {"0", "false", "no"}
+    ocr_langs = [part.strip() for part in os.getenv("DOCLING_OCR_LANG", "ru,en").split(",") if part.strip()]
+    ocr_engine = os.getenv("DOCLING_OCR_ENGINE", "tesseract").strip().lower() or "tesseract"
+    ocr_backend = os.getenv("DOCLING_RAPIDOCR_BACKEND", "torch").strip().lower() or "torch"
+    force_full_page = str(os.getenv("DOCLING_FORCE_FULL_PAGE_OCR", "1")).strip().lower() in {"1", "true", "yes"}
+    accelerator_device = a.device if a.device in {"cpu", "cuda"} else "auto"
+
+    if ocr_engine == "tesseract":
+        tesseract_langs = []
+        for lang in ocr_langs:
+            normalized = lang.strip().lower()
+            if normalized in {"ru", "rus", "russian"}:
+                tesseract_langs.append("rus")
+            elif normalized in {"en", "eng", "english"}:
+                tesseract_langs.append("eng")
+            elif normalized:
+                tesseract_langs.append(normalized)
+        if not tesseract_langs:
+            tesseract_langs = ["rus", "eng"]
+        ocr_options = TesseractCliOcrOptions(
+            lang=tesseract_langs,
+            force_full_page_ocr=force_full_page,
+        )
+    else:
+        ocr_options = RapidOcrOptions(
+            lang=ocr_langs,
+            backend=ocr_backend,
+            force_full_page_ocr=force_full_page,
+        )
+
+    if os.getenv("DEBUG_TRACE_TESSERACT"):
+        print(f"DEBUG_PIPELINE: use_ocr={use_ocr} ocr_engine={ocr_engine!r} "
+              f"ocr_options_type={type(ocr_options).__name__} lang={getattr(ocr_options, 'lang', None)} "
+              f"force_full_page={force_full_page}", file=sys.stderr, flush=True)
+
+    return PdfPipelineOptions(
+        accelerator_options=AcceleratorOptions(device=accelerator_device),
+        do_ocr=use_ocr,
+        force_backend_text=False,
+        ocr_options=ocr_options,
         do_table_structure=True,
         table_structure_options=TableStructureOptions(device=a.device),
         do_image_analysis=False,
         do_code_enrichment=True,
     )
 
-    converter = DocumentConverter()
+
+def convert(a):
+    from docling.document_converter import DocumentConverter, PdfFormatOption
+    from docling.datamodel.base_models import InputFormat
+    from docling_core.types.doc import TableItem, TextItem
+    from collections import Counter
+
+    print("⏳ Настройка пайплайна...")
+    converter_kwargs = {}
+    if Path(a.input).suffix.lower() == ".pdf":
+        converter_kwargs["format_options"] = {
+            InputFormat.PDF: PdfFormatOption(pipeline_options=_build_pdf_pipeline_options(a))
+        }
+
+    converter = DocumentConverter(**converter_kwargs)
     converter.progress_bar = True
-    converter.pipeline_options = pipeline_opts
 
     print(f"🔄 Начинаю конвертацию файла: {a.input}")
     start_time = time.time()
@@ -180,7 +228,6 @@ def convert(a):
         if isinstance(item, TableItem):
             table_counter += 1
 
-            # Получаем номер страницы, если доступен
             page_num = None
             if hasattr(item, "prov") and item.prov:
                 page_num = item.prov.page_no if hasattr(item.prov, "page_no") else None
@@ -190,18 +237,14 @@ def convert(a):
                 print(f"⚠️  Таблица {table_counter} — пуста, пропущена")
                 continue
 
-            # Определяем heading ДО проверки на оглавление
             heading = pending_heading or f"Table {table_counter}"
 
-            # Проверяем, является ли таблица оглавлением
             if is_toc_table(headers, rows, threshold=0.7):
                 print(f"🔖 Таблица {table_counter} ('{heading}') определена как оглавление — пропускаем")
                 continue
 
-            # Генерируем slug из последнего заголовка (очищенного от номеров)
             if heading_stack:
                 last_heading = heading_stack[-1]
-                # Убираем номера вида "1. ", "2.2. " и т.п.
                 clean_heading = re.sub(r'^\d+[\._]?\s*', '', last_heading)
                 slug_base = slugify(clean_heading, max_words=4) or "table"
             else:
@@ -230,16 +273,14 @@ def convert(a):
             else:
                 out_lines.append(text)
 
-    # Запись в файл
     output_path = Path(a.output)
     if output_path.is_dir():
         output_path = output_path / f"{Path(a.input).stem}.md"
     output_path.write_text("\n\n".join(out_lines), encoding="utf-8")
     print(f"✅ Готово: {table_counter} таблиц обработано → {output_path}")
-    
+
 
 def upload_to_dify(a):
-    """Best-effort: заливка через Dataset API."""
     import requests
 
     with open(a.output, "rb") as f:
